@@ -15,4 +15,4 @@ setuptools.setup(
         "Operating System :: POSIX :: Linux",
     ],
     python_requires='>=3.4',
-   
+)
