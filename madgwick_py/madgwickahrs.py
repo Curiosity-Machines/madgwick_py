@@ -75,23 +75,49 @@ class MadgwickAHRS:
         h = q * (Quaternion(0, magnetometer[0], magnetometer[1], magnetometer[2]) * q.conj())
         b = np.array([0, norm(h[1:3]), 0, h[3]])
 
+        q_w = q[0]
+        q_x = q[1]
+        q_y = q[2]
+        q_z = q[3]
+
+        qxz = q_x * q_z
+        qxy = q_x * q_y
+        qyz = q_y * q_z
+        qwx = q_w * q_x
+        qwy = q_w * q_y
+        qwz = q_w * q_z
+        qx2 = q_x * q_x
+        qy2 = q_y * q_y
+        qz2 = q_z * q_z
+        b1 = b[1]
+        b2 = b[2]
+        b3 = b[3]
+        twoqx = 2 * q_x
+        twoqy = 2 * q_y
+        twoqz = 2 * q_z
+        twoqw = 2 * q_w
+        fourqx = 4 * q_x
+        fourqy = 4 * q_y
+        fourqz = 4 * q_z
+
         # Gradient descent algorithm corrective step
         f = np.array([
-            2*(q[1]*q[3] - q[0]*q[2]) - accelerometer[0],
-            2*(q[0]*q[1] + q[2]*q[3]) - accelerometer[1],
-            2*(0.5 - q[1]**2 - q[2]**2) - accelerometer[2],
-            2*b[1]*(0.5 - q[2]**2 - q[3]**2) + 2*b[3]*(q[1]*q[3] - q[0]*q[2]) - magnetometer[0],
-            2*b[1]*(q[1]*q[2] - q[0]*q[3]) + 2*b[3]*(q[0]*q[1] + q[2]*q[3]) - magnetometer[1],
-            2*b[1]*(q[0]*q[2] + q[1]*q[3]) + 2*b[3]*(0.5 - q[1]**2 - q[2]**2) - magnetometer[2]
+            2*(qxz - qwy) - accelerometer[0],
+            2*(qwx + qyz) - accelerometer[1],
+            2*(0.5 - qx2 - qy2) - accelerometer[2],
+            2*b1*(0.5 - qy2 - qz2) + 2*b3*(qxz - qwy) - magnetometer[0],
+            2*b1*(qxy - qwz) + 2*b3*(qwx + qyz) - magnetometer[1],
+            2*b1*(qwy + qxz) + 2*b3*(0.5 - qx2 - qy2) - magnetometer[2]
         ])
         j = np.array([
-            [-2*q[2],                  2*q[3],                  -2*q[0],                  2*q[1]],
-            [2*q[1],                   2*q[0],                  2*q[3],                   2*q[2]],
-            [0,                        -4*q[1],                 -4*q[2],                  0],
-            [-2*b[3]*q[2],             2*b[3]*q[3],             -4*b[1]*q[2]-2*b[3]*q[0], -4*b[1]*q[3]+2*b[3]*q[1]],
-            [-2*b[1]*q[3]+2*b[3]*q[1], 2*b[1]*q[2]+2*b[3]*q[0], 2*b[1]*q[1]+2*b[3]*q[3],  -2*b[1]*q[0]+2*b[3]*q[2]],
-            [2*b[1]*q[2],              2*b[1]*q[3]-4*b[3]*q[1], 2*b[1]*q[0]-4*b[3]*q[2],  2*b[1]*q[1]]
+            [-twoqy,                twoqz,                -twoqw,                  twoqx],
+            [twoqx,                 twoqw,                 twoqz,                  twoqy],
+            [0,                   -fourqx,               -fourqy,                  0],
+            [-b3*twoqy,             b3*twoqz,             -b1*fourqy-b3*twoqw,        -b1*fourqz+b3*twoqx],
+            [-b1*twoqz+b3*twoqx,      b1*twoqy+b3*twoqw,       b1*twoqx+b3*twoqz,        -b1*twoqw+b3*twoqy],
+            [b1*twoqy,              b1*twoqz-b3*fourqx,       b1*twoqw-b3*fourqy,        b1*twoqx]
         ])
+
         step = j.T.dot(f)
         step /= norm(step)  # normalise step magnitude
 
