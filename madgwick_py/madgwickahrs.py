@@ -72,7 +72,7 @@ class MadgwickAHRS:
             return
         magnetometer /= norm(magnetometer)
 
-        h = q * (Quaternion(0, magnetometer[0], magnetometer[1], magnetometer[2]) * q.conj())
+        h = q.mul_q(Quaternion(0, magnetometer[0], magnetometer[1], magnetometer[2]).mul_q(q.conj()))
         b = np.array([0, norm(h[1:3]), 0, h[3]])
 
         q_w = q[0]
@@ -125,10 +125,10 @@ class MadgwickAHRS:
         gyroscopeQuat = Quaternion(0, gyroscope[0], gyroscope[1], gyroscope[2])
         stepQuat = Quaternion(step.T[0], step.T[1], step.T[2], step.T[3])
 
-        gyroscopeQuat = gyroscopeQuat + (q.conj() * stepQuat) * 2 * self.samplePeriod * self.zeta * -1
+        gyroscopeQuat = gyroscopeQuat.add_q((q.conj().mul_q(stepQuat)).mul_scalar(2 * self.samplePeriod * self.zeta * -1))
 
         # Compute rate of change of quaternion
-        qdot = (q * gyroscopeQuat) * 0.5 - self.beta * step.T
+        qdot = (q.mul_q(gyroscopeQuat)).mul_scalar(0.5) - self.beta * step.T
 
         # Integrate to yield quaternion
         q += qdot * self.samplePeriod

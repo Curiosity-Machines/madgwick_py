@@ -56,7 +56,8 @@ class Quaternion:
         :rtype : Quaternion
         :return: the conjugate of the quaternion
         """
-        return Quaternion(self._q[0], -self._q[1], -self._q[2], -self._q[3])
+        q = self._q
+        return Quaternion(q[0], -q[1], -q[2], -q[3])
 
     def to_euler(self):
         """
@@ -115,37 +116,26 @@ class Quaternion:
         yaw = np.arctan2(-2 * (self[1] * self[2] - self[0] * self[3]), self[0] ** 2 + self[1] ** 2 - self[2] ** 2 - self[3] ** 2)
         return roll, pitch, yaw
 
-    def __mul__(self, other):
-        """
-        multiply the given quaternion with another quaternion or a scalar
-        :param other: a Quaternion object or a number
-        :return:
-        """
-        if isinstance(other, Quaternion):
-            w = self._q[0]*other._q[0] - self._q[1]*other._q[1] - self._q[2]*other._q[2] - self._q[3]*other._q[3]
-            x = self._q[0]*other._q[1] + self._q[1]*other._q[0] + self._q[2]*other._q[3] - self._q[3]*other._q[2]
-            y = self._q[0]*other._q[2] - self._q[1]*other._q[3] + self._q[2]*other._q[0] + self._q[3]*other._q[1]
-            z = self._q[0]*other._q[3] + self._q[1]*other._q[2] - self._q[2]*other._q[1] + self._q[3]*other._q[0]
+    def mul_q(self, other):
+        sq = self._q
+        oq = other._q
+        sw, sx, sy, sz = sq
+        ow, ox, oy, oz = oq
 
-            return Quaternion(w, x, y, z)
-        elif isinstance(other, numbers.Number):
-            q = self._q * other
-            return Quaternion(q)
+        w = sw*ow - sx*ox - sy*oy - sz*oz
+        x = sw*ox + sx*ow + sy*oz - sz*oy
+        y = sw*oy - sx*oz + sy*ow + sz*ox
+        z = sw*oz + sx*oy - sy*ox + sz*ow
 
-    def __add__(self, other):
-        """
-        add two quaternions element-wise or add a scalar to each element of the quaternion
-        :param other:
-        :return:
-        """
-        if not isinstance(other, Quaternion):
-            if len(other) != 4:
-                raise TypeError("Quaternions must be added to other quaternions or a 4-element array")
-            q = self._q + other
-        else:
-            q = self._q + other._q
+        return Quaternion(w, x, y, z)
 
+    def add_q(self, other):
+        return Quaternion(self._q + other._q)
+
+    def mul_scalar(self, scalar):
+        q = self._q * scalar
         return Quaternion(q)
+
 
     # Implementing other interfaces to ease working with the class
 
